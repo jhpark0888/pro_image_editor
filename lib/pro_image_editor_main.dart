@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pro_image_editor/models/import_export/utils/export_import_enum.dart';
 import 'package:pro_image_editor/modules/sticker_editor.dart';
+import 'package:pro_image_editor/widgets/default_loading_widget.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:vibration/vibration.dart';
 
@@ -85,6 +86,11 @@ class ProImageEditor extends StatefulWidget {
   /// A callback function that can be used to update the UI from custom widgets.
   final Function? onUpdateUI;
 
+  /// A callback function that can be used to update the UI from custom widgets.
+  final Future Function(BuildContext)? onCloseWraning;
+
+  final Widget? loadingWidget;
+
   /// Configuration options for the image editor.
   final ProImageEditorConfigs configs;
 
@@ -112,13 +118,18 @@ class ProImageEditor extends StatefulWidget {
     required this.onImageEditingComplete,
     this.onCloseEditor,
     this.onUpdateUI,
+    this.loadingWidget,
+    this.onCloseWraning,
     this.byteArray,
     this.assetPath,
     this.networkUrl,
     this.file,
     this.configs = const ProImageEditorConfigs(),
   }) : assert(
-          byteArray != null || file != null || networkUrl != null || assetPath != null,
+          byteArray != null ||
+              file != null ||
+              networkUrl != null ||
+              assetPath != null,
           'At least one of bytes, file, networkUrl, or assetPath must not be null.',
         );
 
@@ -143,6 +154,8 @@ class ProImageEditor extends StatefulWidget {
     required ImageEditingCompleteCallback onImageEditingComplete,
     Function? onUpdateUI,
     Function? onCloseEditor,
+    Widget? loadingWidget,
+    Future Function(BuildContext)? onCloseWraning,
     ProImageEditorConfigs configs = const ProImageEditorConfigs(),
   }) {
     return ProImageEditor._(
@@ -150,7 +163,9 @@ class ProImageEditor extends StatefulWidget {
       byteArray: byteArray,
       configs: configs,
       onImageEditingComplete: onImageEditingComplete,
+      loadingWidget: loadingWidget,
       onCloseEditor: onCloseEditor,
+      onCloseWraning: onCloseWraning,
       onUpdateUI: onUpdateUI,
     );
   }
@@ -177,13 +192,17 @@ class ProImageEditor extends StatefulWidget {
     required ImageEditingCompleteCallback onImageEditingComplete,
     Function? onUpdateUI,
     Function? onCloseEditor,
+    Widget? loadingWidget,
+    Future Function(BuildContext)? onCloseWraning,
   }) {
     return ProImageEditor._(
       key: key,
       file: file,
       configs: configs,
       onImageEditingComplete: onImageEditingComplete,
+      loadingWidget: loadingWidget,
       onCloseEditor: onCloseEditor,
+      onCloseWraning: onCloseWraning,
       onUpdateUI: onUpdateUI,
     );
   }
@@ -210,13 +229,17 @@ class ProImageEditor extends StatefulWidget {
     required ImageEditingCompleteCallback onImageEditingComplete,
     Function? onUpdateUI,
     Function? onCloseEditor,
+    Widget? loadingWidget,
+    Future Function(BuildContext)? onCloseWraning,
   }) {
     return ProImageEditor._(
       key: key,
       assetPath: assetPath,
       configs: configs,
       onImageEditingComplete: onImageEditingComplete,
+      loadingWidget: loadingWidget,
       onCloseEditor: onCloseEditor,
+      onCloseWraning: onCloseWraning,
       onUpdateUI: onUpdateUI,
     );
   }
@@ -243,13 +266,17 @@ class ProImageEditor extends StatefulWidget {
     required ImageEditingCompleteCallback onImageEditingComplete,
     Function? onUpdateUI,
     Function? onCloseEditor,
+    Widget? loadingWidget,
+    Future Function(BuildContext)? onCloseWraning,
   }) {
     return ProImageEditor._(
       key: key,
       networkUrl: networkUrl,
       configs: configs,
       onImageEditingComplete: onImageEditingComplete,
+      loadingWidget: loadingWidget,
       onCloseEditor: onCloseEditor,
+      onCloseWraning: onCloseWraning,
       onUpdateUI: onUpdateUI,
     );
   }
@@ -407,13 +434,19 @@ class ProImageEditorState extends State<ProImageEditor> {
   double _imageHeight = 0;
 
   /// Getter for the screen inner height, excluding top and bottom padding.
-  double get _screenInnerHeight => _screen.height - _screenPadding.top - _screenPadding.bottom - kToolbarHeight * 2;
+  double get _screenInnerHeight =>
+      _screen.height -
+      _screenPadding.top -
+      _screenPadding.bottom -
+      kToolbarHeight * 2;
 
   /// Getter for the X-coordinate of the middle of the screen.
-  double get _screenMiddleX => _screen.width / 2 - (_screenPadding.left + _screenPadding.right) / 2;
+  double get _screenMiddleX =>
+      _screen.width / 2 - (_screenPadding.left + _screenPadding.right) / 2;
 
   /// Getter for the Y-coordinate of the middle of the screen.
-  double get _screenMiddleY => _screen.height / 2 - (_screenPadding.top + _screenPadding.bottom) / 2;
+  double get _screenMiddleY =>
+      _screen.height / 2 - (_screenPadding.top + _screenPadding.bottom) / 2;
 
   /// Last recorded X-axis position for layers.
   LayerLastPosition _lastPositionX = LayerLastPosition.center;
@@ -436,6 +469,8 @@ class ProImageEditorState extends State<ProImageEditor> {
   /// Store the last device Orientation
   int _deviceOrientation = 0;
 
+  bool _isLoading = false;
+
   @override
   void initState() {
     super.initState();
@@ -453,10 +488,12 @@ class ProImageEditorState extends State<ProImageEditor> {
       networkUrl: widget.networkUrl,
     ));
 
-    _stateHistory.add(EditorStateHistory(bytesRefIndex: 0, layers: [], filters: []));
+    _stateHistory
+        .add(EditorStateHistory(bytesRefIndex: 0, layers: [], filters: []));
 
     Vibration.hasVibrator().then((value) => _deviceCanVibrate = value ?? false);
-    Vibration.hasCustomVibrationsSupport().then((value) => _deviceCanCustomVibrate = value ?? false);
+    Vibration.hasCustomVibrationsSupport()
+        .then((value) => _deviceCanCustomVibrate = value ?? false);
 
     ServicesBinding.instance.keyboard.addHandler(_onKey);
     if (kIsWeb) {
@@ -471,7 +508,9 @@ class ProImageEditorState extends State<ProImageEditor> {
     _bottomBarScrollCtrl.dispose();
     _scaleDebounce.dispose();
     _screenSizeDebouncer.dispose();
-    SystemChrome.setSystemUIOverlayStyle(_theme.brightness == Brightness.dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark);
+    SystemChrome.setSystemUIOverlayStyle(_theme.brightness == Brightness.dark
+        ? SystemUiOverlayStyle.light
+        : SystemUiOverlayStyle.dark);
     SystemChrome.restoreSystemUIOverlays();
     ServicesBinding.instance.keyboard.removeHandler(_onKey);
     if (kIsWeb && _browserContextMenuBeforeEnabled) {
@@ -530,7 +569,8 @@ class ProImageEditorState extends State<ProImageEditor> {
   List<FilterStateHistory> get _filters => _stateHistory[_editPosition].filters;
 
   /// Get the current image being edited from the change list.
-  EditorImage get _image => _imgStateHistory[_stateHistory[_editPosition].bytesRefIndex];
+  EditorImage get _image =>
+      _imgStateHistory[_stateHistory[_editPosition].bytesRefIndex];
 
   /// Clean forward changes in the history.
   ///
@@ -573,7 +613,9 @@ class ProImageEditorState extends State<ProImageEditor> {
     _stateHistory.add(
       EditorStateHistory(
         bytesRefIndex: _imgStateHistory.length - 1,
-        layers: List<Layer>.from(_stateHistory.last.layers.map((e) => _copyLayer(e)))..add(layer),
+        layers: List<Layer>.from(
+            _stateHistory.last.layers.map((e) => _copyLayer(e)))
+          ..add(layer),
         filters: _filters,
       ),
     );
@@ -595,7 +637,8 @@ class ProImageEditorState extends State<ProImageEditor> {
         filters: _filters,
       ),
     );
-    var oldIndex = _layers.indexWhere((element) => element.id == _tempLayer!.id);
+    var oldIndex =
+        _layers.indexWhere((element) => element.id == _tempLayer!.id);
     if (oldIndex >= 0) {
       _stateHistory[_editPosition].layers[oldIndex] = _copyLayer(_tempLayer!);
     }
@@ -617,9 +660,11 @@ class ProImageEditorState extends State<ProImageEditor> {
         filters: _filters,
       ),
     );
-    var oldIndex = _layers.indexWhere((element) => element.id == (layer?.id ?? _tempLayer!.id));
+    var oldIndex = _layers
+        .indexWhere((element) => element.id == (layer?.id ?? _tempLayer!.id));
     if (oldIndex >= 0) {
-      _stateHistory[_editPosition].layers[oldIndex] = _copyLayer(layer ?? _tempLayer!);
+      _stateHistory[_editPosition].layers[oldIndex] =
+          _copyLayer(layer ?? _tempLayer!);
     }
     _editPosition++;
   }
@@ -652,7 +697,8 @@ class ProImageEditorState extends State<ProImageEditor> {
   ///
   /// This method decodes the image if it hasn't been decoded yet and updates its properties.
   void _decodeImage() async {
-    bool shouldImportStateHistory = _imageNeedDecode && widget.configs.initStateHistory != null;
+    bool shouldImportStateHistory =
+        _imageNeedDecode && widget.configs.initStateHistory != null;
     _imageNeedDecode = false;
     var decodedImage = await decodeImageFromList(await _image.safeByteArray);
 
@@ -828,59 +874,81 @@ class ProImageEditorState extends State<ProImageEditor> {
     _enabledHitDetection = false;
     if (detail.pointerCount == 1) {
       if (_activeScale) return;
-      _freeStyleHighPerformanceMoving = widget.configs.paintEditorConfigs.freeStyleHighPerformanceMoving ?? isWebMobile;
+      _freeStyleHighPerformanceMoving =
+          widget.configs.paintEditorConfigs.freeStyleHighPerformanceMoving ??
+              isWebMobile;
       _activeLayer.offset = Offset(
         _activeLayer.offset.dx + detail.focalPointDelta.dx,
         _activeLayer.offset.dy + detail.focalPointDelta.dy,
       );
 
-      hoverRemoveBtn = detail.focalPoint.dx <= kToolbarHeight && detail.focalPoint.dy <= kToolbarHeight + MediaQuery.of(context).viewPadding.top;
+      hoverRemoveBtn = detail.focalPoint.dx <= kToolbarHeight &&
+          detail.focalPoint.dy <=
+              kToolbarHeight + MediaQuery.of(context).viewPadding.top;
 
       bool vibarate = false;
       double posX = _activeLayer.offset.dx + screenPaddingHelper.left;
       double posY = _activeLayer.offset.dy + screenPaddingHelper.top;
 
-      bool hitAreaX = detail.focalPoint.dx >= _snapStartPosX - _hitSpan && detail.focalPoint.dx <= _snapStartPosX + _hitSpan;
-      bool hitAreaY = detail.focalPoint.dy >= _snapStartPosY - _hitSpan && detail.focalPoint.dy <= _snapStartPosY + _hitSpan;
+      bool hitAreaX = detail.focalPoint.dx >= _snapStartPosX - _hitSpan &&
+          detail.focalPoint.dx <= _snapStartPosX + _hitSpan;
+      bool hitAreaY = detail.focalPoint.dy >= _snapStartPosY - _hitSpan &&
+          detail.focalPoint.dy <= _snapStartPosY + _hitSpan;
 
-      bool helperGoNearLineLeft = posX >= _screenMiddleX && _lastPositionX == LayerLastPosition.left;
-      bool helperGoNearLineRight = posX <= _screenMiddleX && _lastPositionX == LayerLastPosition.right;
-      bool helperGoNearLineTop = posY >= _screenMiddleY && _lastPositionY == LayerLastPosition.top;
-      bool helperGoNearLineBottom = posY <= _screenMiddleY && _lastPositionY == LayerLastPosition.bottom;
+      bool helperGoNearLineLeft =
+          posX >= _screenMiddleX && _lastPositionX == LayerLastPosition.left;
+      bool helperGoNearLineRight =
+          posX <= _screenMiddleX && _lastPositionX == LayerLastPosition.right;
+      bool helperGoNearLineTop =
+          posY >= _screenMiddleY && _lastPositionY == LayerLastPosition.top;
+      bool helperGoNearLineBottom =
+          posY <= _screenMiddleY && _lastPositionY == LayerLastPosition.bottom;
 
       /// Calc vertical helper line
-      if ((!_showVerticalHelperLine && (helperGoNearLineLeft || helperGoNearLineRight)) || (_showVerticalHelperLine && hitAreaX)) {
+      if ((!_showVerticalHelperLine &&
+              (helperGoNearLineLeft || helperGoNearLineRight)) ||
+          (_showVerticalHelperLine && hitAreaX)) {
         if (!_showVerticalHelperLine) {
           vibarate = true;
           _snapStartPosX = detail.focalPoint.dx;
         }
         _showVerticalHelperLine = true;
-        _activeLayer.offset = Offset(_screenMiddleX - screenPaddingHelper.left, _activeLayer.offset.dy);
+        _activeLayer.offset = Offset(
+            _screenMiddleX - screenPaddingHelper.left, _activeLayer.offset.dy);
         _lastPositionX = LayerLastPosition.center;
       } else {
         _showVerticalHelperLine = false;
-        _lastPositionX = posX <= _screenMiddleX ? LayerLastPosition.left : LayerLastPosition.right;
+        _lastPositionX = posX <= _screenMiddleX
+            ? LayerLastPosition.left
+            : LayerLastPosition.right;
       }
 
       /// Calc horizontal helper line
-      if ((!_showHorizontalHelperLine && (helperGoNearLineTop || helperGoNearLineBottom)) || (_showHorizontalHelperLine && hitAreaY)) {
+      if ((!_showHorizontalHelperLine &&
+              (helperGoNearLineTop || helperGoNearLineBottom)) ||
+          (_showHorizontalHelperLine && hitAreaY)) {
         if (!_showHorizontalHelperLine) {
           vibarate = true;
           _snapStartPosY = detail.focalPoint.dy;
         }
         _showHorizontalHelperLine = true;
-        _activeLayer.offset = Offset(_activeLayer.offset.dx, _screenMiddleY - screenPaddingHelper.top);
+        _activeLayer.offset = Offset(
+            _activeLayer.offset.dx, _screenMiddleY - screenPaddingHelper.top);
         _lastPositionY = LayerLastPosition.center;
       } else {
         _showHorizontalHelperLine = false;
-        _lastPositionY = posY <= _screenMiddleY ? LayerLastPosition.top : LayerLastPosition.bottom;
+        _lastPositionY = posY <= _screenMiddleY
+            ? LayerLastPosition.top
+            : LayerLastPosition.bottom;
       }
 
       if (vibarate) {
         _lineHitVibrate();
       }
     } else if (detail.pointerCount == 2) {
-      _freeStyleHighPerformanceScaling = widget.configs.paintEditorConfigs.freeStyleHighPerformanceScaling ?? !isDesktop;
+      _freeStyleHighPerformanceScaling =
+          widget.configs.paintEditorConfigs.freeStyleHighPerformanceScaling ??
+              !isDesktop;
       _activeScale = true;
 
       _activeLayer.scale = _baseScaleFactor * detail.scale;
@@ -896,10 +964,15 @@ class ProImageEditorState extends State<ProImageEditor> {
 
       if ((!_showRotationHelperLine &&
               ((degHit > 0 && degHit <= hitSpanX && _snapLastRotation < deg) ||
-                  (degHit < 45 && degHit >= 45 - hitSpanX && _snapLastRotation > deg))) ||
+                  (degHit < 45 &&
+                      degHit >= 45 - hitSpanX &&
+                      _snapLastRotation > deg))) ||
           (_showRotationHelperLine && hitArea)) {
         if (_rotationStartedHelper) {
-          _activeLayer.rotation = (deg - (degHit > 45 - hitSpanX ? degHit - 45 : degHit)) / 180 * pi;
+          _activeLayer.rotation =
+              (deg - (degHit > 45 - hitSpanX ? degHit - 45 : degHit)) /
+                  180 *
+                  pi;
           _rotationHelperLineDeg = _activeLayer.rotation;
 
           double posY = _activeLayer.offset.dy + screenPaddingHelper.top;
@@ -1126,8 +1199,17 @@ class ProImageEditorState extends State<ProImageEditor> {
         configs: widget.configs.paintEditorConfigs,
         stickerInitWidth: widget.configs.stickerEditorConfigs?.initWidth ?? 100,
         paddingHelper: EdgeInsets.only(
-          top: (_screen.height - _screenPadding.top - _screenPadding.bottom - _imageHeight) / 2 - kToolbarHeight,
-          left: (_screen.width - _screenPadding.left - _screenPadding.right - _imageWidth) / 2,
+          top: (_screen.height -
+                      _screenPadding.top -
+                      _screenPadding.bottom -
+                      _imageHeight) /
+                  2 -
+              kToolbarHeight,
+          left: (_screen.width -
+                  _screenPadding.left -
+                  _screenPadding.right -
+                  _imageWidth) /
+              2,
         ),
         designMode: widget.configs.designMode,
         emojiTextStyle: widget.configs.emojiEditorConfigs.textStyle,
@@ -1195,19 +1277,15 @@ class ProImageEditorState extends State<ProImageEditor> {
     Uint8List? bytesWithLayers;
     if (_layers.isNotEmpty || _filters.isNotEmpty) {
       _activeCrop = true;
-      LoadingDialog loading = LoadingDialog()
-        ..show(
-          context,
-          theme: _theme,
-          imageEditorTheme: widget.configs.imageEditorTheme,
-          designMode: widget.configs.designMode,
-          i18n: widget.configs.i18n,
-          message: widget.configs.i18n.cropRotateEditor.prepareImageDialogMsg,
-        );
+
+      setState(() {
+        _isLoading = true;
+      });
+
       bytesWithLayers = await _screenshotCtrl.capture(
         pixelRatio: _pixelRatio,
       );
-      if (mounted) await loading.hide(context);
+      if (mounted) setState(() => _isLoading = false);
     }
     _activeCrop = false;
     if (!mounted) return;
@@ -1231,6 +1309,7 @@ class ProImageEditorState extends State<ProImageEditor> {
         designMode: widget.configs.designMode,
         imageEditorTheme: widget.configs.imageEditorTheme,
         customWidgets: widget.configs.customWidgets,
+        loadingWidget: widget.loadingWidget,
         configs: widget.configs.cropRotateEditorConfigs,
       ),
     ).then((response) async {
@@ -1257,8 +1336,10 @@ class ProImageEditorState extends State<ProImageEditor> {
 
           double fitFactor = 1;
 
-          bool oldFitWidth = _imageWidth >= _screen.width - 0.1 && _imageWidth <= _screen.width + 0.1;
-          bool newFitWidth = newImgW >= _screen.width - 0.1 && newImgW <= _screen.width + 0.1;
+          bool oldFitWidth = _imageWidth >= _screen.width - 0.1 &&
+              _imageWidth <= _screen.width + 0.1;
+          bool newFitWidth =
+              newImgW >= _screen.width - 0.1 && newImgW <= _screen.width + 0.1;
           var scaleX = newFitWidth ? oldFullW / w : oldFullH / h;
 
           if (oldFitWidth != newFitWidth) {
@@ -1354,6 +1435,7 @@ class ProImageEditorState extends State<ProImageEditor> {
         customWidgets: widget.configs.customWidgets,
         configs: widget.configs.filterEditorConfigs,
         onUpdateUI: widget.onUpdateUI,
+        loadingWidget: widget.loadingWidget,
         activeFilters: _filters,
         convertToUint8List: false,
       ),
@@ -1483,15 +1565,10 @@ class ProImageEditorState extends State<ProImageEditor> {
       return closeEditor();
     }
     _doneEditing = true;
-    LoadingDialog loading = LoadingDialog()
-      ..show(
-        context,
-        i18n: widget.configs.i18n,
-        theme: _theme,
-        designMode: widget.configs.designMode,
-        message: widget.configs.i18n.doneLoadingMsg,
-        imageEditorTheme: widget.configs.imageEditorTheme,
-      );
+
+    setState(() {
+      _isLoading = true;
+    });
 
     var bytes = await _screenshotCtrl.capture(pixelRatio: _pixelRatio);
 
@@ -1499,7 +1576,11 @@ class ProImageEditorState extends State<ProImageEditor> {
       await widget.onImageEditingComplete(bytes);
     }
 
-    if (mounted) loading.hide(context);
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
 
     widget.onCloseEditor?.call();
   }
@@ -1523,35 +1604,42 @@ class ProImageEditorState extends State<ProImageEditor> {
   /// Displays a warning dialog before closing the image editor.
   void closeWarning() async {
     _openDialog = true;
-    await showAdaptiveDialog(
-      context: context,
-      builder: (BuildContext context) => AdaptiveDialog(
-        designMode: widget.configs.designMode,
-        brightness: _theme.brightness,
-        title: Text(widget.configs.i18n.various.closeEditorWarningTitle),
-        content: Text(widget.configs.i18n.various.closeEditorWarningMessage),
-        actions: <AdaptiveDialogAction>[
-          AdaptiveDialogAction(
-            designMode: widget.configs.designMode,
-            onPressed: () => Navigator.pop(context, 'Cancel'),
-            child: Text(widget.configs.i18n.various.closeEditorWarningCancelBtn),
-          ),
-          AdaptiveDialogAction(
-            designMode: widget.configs.designMode,
-            onPressed: () {
-              _editPosition = 0;
-              Navigator.pop(context, 'OK');
-              if (widget.onCloseEditor == null) {
-                Navigator.pop(context);
-              } else {
-                widget.onCloseEditor!.call();
-              }
-            },
-            child: Text(widget.configs.i18n.various.closeEditorWarningConfirmBtn),
-          ),
-        ],
-      ),
-    );
+    if (widget.onCloseWraning != null) {
+      await widget.onCloseWraning!(context);
+    } else {
+      await showAdaptiveDialog(
+        context: context,
+        builder: (BuildContext context) => AdaptiveDialog(
+          designMode: widget.configs.designMode,
+          brightness: _theme.brightness,
+          title: Text(widget.configs.i18n.various.closeEditorWarningTitle),
+          content: Text(widget.configs.i18n.various.closeEditorWarningMessage),
+          actions: <AdaptiveDialogAction>[
+            AdaptiveDialogAction(
+              designMode: widget.configs.designMode,
+              onPressed: () => Navigator.pop(context, 'Cancel'),
+              child:
+                  Text(widget.configs.i18n.various.closeEditorWarningCancelBtn),
+            ),
+            AdaptiveDialogAction(
+              designMode: widget.configs.designMode,
+              onPressed: () {
+                _editPosition = 0;
+                Navigator.pop(context, 'OK');
+                if (widget.onCloseEditor == null) {
+                  Navigator.pop(context);
+                } else {
+                  widget.onCloseEditor!.call();
+                }
+              },
+              child: Text(
+                  widget.configs.i18n.various.closeEditorWarningConfirmBtn),
+            ),
+          ],
+        ),
+      );
+    }
+
     _openDialog = false;
   }
 
@@ -1585,8 +1673,10 @@ class ProImageEditorState extends State<ProImageEditor> {
 
   /// Handles mouse scroll events.
   void _mouseScroll(PointerSignalEvent event) {
-    bool shiftDown = HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.shiftLeft) ||
-        HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.shiftRight);
+    bool shiftDown = HardwareKeyboard.instance.logicalKeysPressed
+            .contains(LogicalKeyboardKey.shiftLeft) ||
+        HardwareKeyboard.instance.logicalKeysPressed
+            .contains(LogicalKeyboardKey.shiftRight);
 
     if (event is PointerScrollEvent && _selectedLayer >= 0) {
       if (shiftDown) {
@@ -1615,8 +1705,16 @@ class ProImageEditorState extends State<ProImageEditor> {
 
   /// Get the screen padding values.
   EdgeInsets get screenPaddingHelper => EdgeInsets.only(
-        top: (_screen.height - _screenPadding.top - _screenPadding.bottom - _imageHeight) / 2,
-        left: (_screen.width - _screenPadding.left - _screenPadding.right - _imageWidth) / 2,
+        top: (_screen.height -
+                _screenPadding.top -
+                _screenPadding.bottom -
+                _imageHeight) /
+            2,
+        left: (_screen.width -
+                _screenPadding.left -
+                _screenPadding.right -
+                _imageWidth) /
+            2,
       );
 
   /// Determines whether undo actions can be performed on the current state.
@@ -1658,7 +1756,10 @@ class ProImageEditorState extends State<ProImageEditor> {
       if (import.imgStateHistory.isNotEmpty) {
         _imgStateHistory = import.imgStateHistory;
       }
-      _stateHistory = [EditorStateHistory(bytesRefIndex: 0, filters: [], layers: []), ...import.stateHistory];
+      _stateHistory = [
+        EditorStateHistory(bytesRefIndex: 0, filters: [], layers: []),
+        ...import.stateHistory
+      ];
     } else {
       for (var el in import.stateHistory) {
         if (import.configs.mergeMode == ImportEditorMergeMode.merge) {
@@ -1676,7 +1777,8 @@ class ProImageEditorState extends State<ProImageEditor> {
     widget.onUpdateUI?.call();
   }
 
-  ExportStateHistory exportStateHistory({ExportEditorConfigs configs = const ExportEditorConfigs()}) {
+  ExportStateHistory exportStateHistory(
+      {ExportEditorConfigs configs = const ExportEditorConfigs()}) {
     return ExportStateHistory(
       _stateHistory,
       _imgStateHistory,
@@ -1710,7 +1812,8 @@ class ProImageEditorState extends State<ProImageEditor> {
         },
         child: LayoutBuilder(builder: (context, constraints) {
           // Check if screensize changed to recalculate image size
-          if (_lastScreenSize.width != constraints.maxWidth || _lastScreenSize.height != constraints.maxHeight) {
+          if (_lastScreenSize.width != constraints.maxWidth ||
+              _lastScreenSize.height != constraints.maxHeight) {
             _screenSizeDebouncer(() {
               _decodeImage();
             });
@@ -1724,14 +1827,24 @@ class ProImageEditorState extends State<ProImageEditor> {
             value: widget.configs.imageEditorTheme.uiOverlayStyle,
             child: Theme(
               data: _theme,
-              child: SafeArea(
-                child: Scaffold(
-                  backgroundColor: widget.configs.imageEditorTheme.background,
-                  resizeToAvoidBottomInset: false,
-                  appBar: _buildAppBar(),
-                  body: _buildBody(),
-                  bottomNavigationBar: _buildBottomNavBar(),
-                ),
+              child: Stack(
+                children: [
+                  SafeArea(
+                    child: Scaffold(
+                      backgroundColor:
+                          widget.configs.imageEditorTheme.background,
+                      resizeToAvoidBottomInset: false,
+                      appBar: _buildAppBar(),
+                      body: _buildBody(),
+                      bottomNavigationBar: _buildBottomNavBar(),
+                    ),
+                  ),
+                  if (_isLoading)
+                    Positioned.fill(
+                      child:
+                          widget.loadingWidget ?? const DefaultLoadingWidget(),
+                    )
+                ],
               ),
             ),
           );
@@ -1762,7 +1875,9 @@ class ProImageEditorState extends State<ProImageEditor> {
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   icon: Icon(
                     widget.configs.icons.undoAction,
-                    color: _editPosition > 0 ? Colors.white : Colors.white.withAlpha(80),
+                    color: _editPosition > 0
+                        ? Colors.white
+                        : Colors.white.withAlpha(80),
                   ),
                   onPressed: undoAction,
                 ),
@@ -1772,7 +1887,9 @@ class ProImageEditorState extends State<ProImageEditor> {
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   icon: Icon(
                     widget.configs.icons.redoAction,
-                    color: _editPosition < _stateHistory.length - 1 ? Colors.white : Colors.white.withAlpha(80),
+                    color: _editPosition < _stateHistory.length - 1
+                        ? Colors.white
+                        : Colors.white.withAlpha(80),
                   ),
                   onPressed: redoAction,
                 ),
@@ -1803,7 +1920,8 @@ class ProImageEditorState extends State<ProImageEditor> {
           children: [
             Hero(
               tag: !_inited ? '--' : widget.configs.heroTag,
-              createRectTween: (begin, end) => RectTween(begin: begin, end: end),
+              createRectTween: (begin, end) =>
+                  RectTween(begin: begin, end: end),
               child: Center(
                 child: SizedBox(
                   height: _imageHeight,
@@ -1814,10 +1932,16 @@ class ProImageEditorState extends State<ProImageEditor> {
                       builder: (context, snapshot) {
                         return MouseRegion(
                           hitTestBehavior: HitTestBehavior.translucent,
-                          cursor: snapshot.data != true ? SystemMouseCursors.basic : widget.configs.imageEditorTheme.layerHoverCursor,
+                          cursor: snapshot.data != true
+                              ? SystemMouseCursors.basic
+                              : widget
+                                  .configs.imageEditorTheme.layerHoverCursor,
                           onHover: isDesktop
                               ? (event) {
-                                  var hasHit = _layers.indexWhere((element) => element is PaintingLayerData && element.item.hit) >= 0;
+                                  var hasHit = _layers.indexWhere((element) =>
+                                          element is PaintingLayerData &&
+                                          element.item.hit) >=
+                                      0;
                                   if (hasHit != snapshot.data) {
                                     _mouseMoveStream.add(hasHit);
                                   }
@@ -1887,10 +2011,15 @@ class ProImageEditorState extends State<ProImageEditor> {
                             children: <Widget>[
                               if (widget.configs.paintEditorConfigs.enabled)
                                 FlatIconTextButton(
-                                  key: const ValueKey('open-painting-editor-btn'),
-                                  label: Text(widget.configs.i18n.paintEditor.bottomNavigationBarText, style: bottomTextStyle),
+                                  key: const ValueKey(
+                                      'open-painting-editor-btn'),
+                                  label: Text(
+                                      widget.configs.i18n.paintEditor
+                                          .bottomNavigationBarText,
+                                      style: bottomTextStyle),
                                   icon: Icon(
-                                    widget.configs.icons.paintingEditor.bottomNavBar,
+                                    widget.configs.icons.paintingEditor
+                                        .bottomNavBar,
                                     size: bottomIconSize,
                                     color: Colors.white,
                                   ),
@@ -1899,20 +2028,30 @@ class ProImageEditorState extends State<ProImageEditor> {
                               if (widget.configs.textEditorConfigs.enabled)
                                 FlatIconTextButton(
                                   key: const ValueKey('open-text-editor-btn'),
-                                  label: Text(widget.configs.i18n.textEditor.bottomNavigationBarText, style: bottomTextStyle),
+                                  label: Text(
+                                      widget.configs.i18n.textEditor
+                                          .bottomNavigationBarText,
+                                      style: bottomTextStyle),
                                   icon: Icon(
-                                    widget.configs.icons.textEditor.bottomNavBar,
+                                    widget
+                                        .configs.icons.textEditor.bottomNavBar,
                                     size: bottomIconSize,
                                     color: Colors.white,
                                   ),
                                   onPressed: openTextEditor,
                                 ),
-                              if (widget.configs.cropRotateEditorConfigs.enabled)
+                              if (widget
+                                  .configs.cropRotateEditorConfigs.enabled)
                                 FlatIconTextButton(
-                                  key: const ValueKey('open-crop-rotate-editor-btn'),
-                                  label: Text(widget.configs.i18n.cropRotateEditor.bottomNavigationBarText, style: bottomTextStyle),
+                                  key: const ValueKey(
+                                      'open-crop-rotate-editor-btn'),
+                                  label: Text(
+                                      widget.configs.i18n.cropRotateEditor
+                                          .bottomNavigationBarText,
+                                      style: bottomTextStyle),
                                   icon: Icon(
-                                    widget.configs.icons.cropRotateEditor.bottomNavBar,
+                                    widget.configs.icons.cropRotateEditor
+                                        .bottomNavBar,
                                     size: bottomIconSize,
                                     color: Colors.white,
                                   ),
@@ -1921,9 +2060,13 @@ class ProImageEditorState extends State<ProImageEditor> {
                               if (widget.configs.filterEditorConfigs.enabled)
                                 FlatIconTextButton(
                                   key: const ValueKey('open-filter-editor-btn'),
-                                  label: Text(widget.configs.i18n.filterEditor.bottomNavigationBarText, style: bottomTextStyle),
+                                  label: Text(
+                                      widget.configs.i18n.filterEditor
+                                          .bottomNavigationBarText,
+                                      style: bottomTextStyle),
                                   icon: Icon(
-                                    widget.configs.icons.filterEditor.bottomNavBar,
+                                    widget.configs.icons.filterEditor
+                                        .bottomNavBar,
                                     size: bottomIconSize,
                                     color: Colors.white,
                                   ),
@@ -1932,20 +2075,31 @@ class ProImageEditorState extends State<ProImageEditor> {
                               if (widget.configs.emojiEditorConfigs.enabled)
                                 FlatIconTextButton(
                                   key: const ValueKey('open-emoji-editor-btn'),
-                                  label: Text(widget.configs.i18n.emojiEditor.bottomNavigationBarText, style: bottomTextStyle),
+                                  label: Text(
+                                      widget.configs.i18n.emojiEditor
+                                          .bottomNavigationBarText,
+                                      style: bottomTextStyle),
                                   icon: Icon(
-                                    widget.configs.icons.emojiEditor.bottomNavBar,
+                                    widget
+                                        .configs.icons.emojiEditor.bottomNavBar,
                                     size: bottomIconSize,
                                     color: Colors.white,
                                   ),
                                   onPressed: openEmojiEditor,
                                 ),
-                              if (widget.configs.stickerEditorConfigs?.enabled == true)
+                              if (widget
+                                      .configs.stickerEditorConfigs?.enabled ==
+                                  true)
                                 FlatIconTextButton(
-                                  key: const ValueKey('open-sticker-editor-btn'),
-                                  label: Text(widget.configs.i18n.stickerEditor.bottomNavigationBarText, style: bottomTextStyle),
+                                  key:
+                                      const ValueKey('open-sticker-editor-btn'),
+                                  label: Text(
+                                      widget.configs.i18n.stickerEditor
+                                          .bottomNavigationBarText,
+                                      style: bottomTextStyle),
                                   icon: Icon(
-                                    widget.configs.icons.stickerEditor.bottomNavBar,
+                                    widget.configs.icons.stickerEditor
+                                        .bottomNavBar,
                                     size: bottomIconSize,
                                     color: Colors.white,
                                   ),
@@ -1980,7 +2134,8 @@ class ProImageEditorState extends State<ProImageEditor> {
           freeStyleHighPerformanceScaling: _freeStyleHighPerformanceScaling,
           freeStyleHighPerformanceMoving: _freeStyleHighPerformanceMoving,
           designMode: widget.configs.designMode,
-          stickerInitWidth: widget.configs.stickerEditorConfigs?.initWidth ?? 100,
+          stickerInitWidth:
+              widget.configs.stickerEditorConfigs?.initWidth ?? 100,
           onTap: (layer) async {
             if (layer is TextLayerData) {
               _onTextLayerTap(layer);
@@ -1998,7 +2153,9 @@ class ProImageEditorState extends State<ProImageEditor> {
           },
           onRemoveTap: () {
             setState(() {
-              _removeLayer(_layers.indexWhere((element) => element.id == layerItem.id), layer: layerItem);
+              _removeLayer(
+                  _layers.indexWhere((element) => element.id == layerItem.id),
+                  layer: layerItem);
             });
             widget.onUpdateUI?.call();
           },
@@ -2069,7 +2226,8 @@ class ProImageEditorState extends State<ProImageEditor> {
               width: kToolbarHeight,
               decoration: BoxDecoration(
                 color: hoverRemoveBtn ? Colors.red : Colors.grey.shade800,
-                borderRadius: const BorderRadius.only(bottomRight: Radius.circular(20)),
+                borderRadius:
+                    const BorderRadius.only(bottomRight: Radius.circular(20)),
               ),
               child: Center(
                 child: Icon(

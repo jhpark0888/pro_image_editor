@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pro_image_editor/models/filter_state_history.dart';
+import 'package:pro_image_editor/widgets/default_loading_widget.dart';
 import 'package:screenshot/screenshot.dart';
 
 import '../../models/custom_widgets.dart';
@@ -15,7 +16,6 @@ import '../../models/theme/theme.dart';
 import '../../models/i18n/i18n.dart';
 import '../../models/icons/icons.dart';
 import '../../utils/design_mode.dart';
-import '../../widgets/loading_dialog.dart';
 import '../../widgets/pro_image_editor_desktop_mode.dart';
 import 'widgets/image_with_filter.dart';
 
@@ -67,6 +67,8 @@ class FilterEditor extends StatefulWidget {
   /// A callback function that can be used to update the UI from custom widgets.
   final Function? onUpdateUI;
 
+  final Widget? loadingWidget;
+
   /// Determines whether to return the image as a Uint8List when closing the editor.
   ///
   /// If set to `true`, when closing the editor, the editor will return the final image
@@ -86,6 +88,7 @@ class FilterEditor extends StatefulWidget {
     this.onUpdateUI,
     this.convertToUint8List = false,
     this.activeFilters,
+    this.loadingWidget,
     required this.theme,
     required this.designMode,
     required this.i18n,
@@ -144,6 +147,7 @@ class FilterEditor extends StatefulWidget {
     FilterEditorConfigs configs = const FilterEditorConfigs(),
     required String heroTag,
     Function? onUpdateUI,
+    Widget? loadingWidget,
     bool convertToUint8List = false,
     List<FilterStateHistory>? activeFilters,
   }) {
@@ -159,6 +163,7 @@ class FilterEditor extends StatefulWidget {
       heroTag: heroTag,
       configs: configs,
       onUpdateUI: onUpdateUI,
+      loadingWidget: loadingWidget,
       activeFilters: activeFilters,
       convertToUint8List: convertToUint8List,
     );
@@ -206,6 +211,7 @@ class FilterEditor extends StatefulWidget {
     FilterEditorConfigs configs = const FilterEditorConfigs(),
     required String heroTag,
     Function? onUpdateUI,
+    Widget? loadingWidget,
     bool convertToUint8List = false,
     List<FilterStateHistory>? activeFilters,
   }) {
@@ -221,6 +227,7 @@ class FilterEditor extends StatefulWidget {
       heroTag: heroTag,
       configs: configs,
       onUpdateUI: onUpdateUI,
+      loadingWidget: loadingWidget,
       activeFilters: activeFilters,
       convertToUint8List: convertToUint8List,
     );
@@ -268,6 +275,7 @@ class FilterEditor extends StatefulWidget {
     FilterEditorConfigs configs = const FilterEditorConfigs(),
     required String heroTag,
     Function? onUpdateUI,
+    Widget? loadingWidget,
     bool convertToUint8List = false,
     List<FilterStateHistory>? activeFilters,
   }) {
@@ -283,6 +291,7 @@ class FilterEditor extends StatefulWidget {
       heroTag: heroTag,
       configs: configs,
       onUpdateUI: onUpdateUI,
+      loadingWidget: loadingWidget,
       activeFilters: activeFilters,
       convertToUint8List: convertToUint8List,
     );
@@ -328,6 +337,7 @@ class FilterEditor extends StatefulWidget {
     FilterEditorConfigs configs = const FilterEditorConfigs(),
     required String heroTag,
     Function? onUpdateUI,
+    Widget? loadingWidget,
     bool convertToUint8List = false,
     List<FilterStateHistory>? activeFilters,
   }) {
@@ -343,6 +353,7 @@ class FilterEditor extends StatefulWidget {
       heroTag: heroTag,
       configs: configs,
       onUpdateUI: onUpdateUI,
+      loadingWidget: loadingWidget,
       activeFilters: activeFilters,
       convertToUint8List: convertToUint8List,
     );
@@ -390,6 +401,7 @@ class FilterEditor extends StatefulWidget {
     FilterEditorConfigs configs = const FilterEditorConfigs(),
     required String heroTag,
     Function? onUpdateUI,
+    Widget? loadingWidget,
     bool convertToUint8List = false,
     List<FilterStateHistory>? activeFilters,
     Uint8List? byteArray,
@@ -410,6 +422,7 @@ class FilterEditor extends StatefulWidget {
         heroTag: heroTag,
         configs: configs,
         onUpdateUI: onUpdateUI,
+        loadingWidget: loadingWidget,
         activeFilters: activeFilters,
         convertToUint8List: convertToUint8List,
       );
@@ -426,6 +439,7 @@ class FilterEditor extends StatefulWidget {
         heroTag: heroTag,
         configs: configs,
         onUpdateUI: onUpdateUI,
+        loadingWidget: loadingWidget,
         activeFilters: activeFilters,
         convertToUint8List: convertToUint8List,
       );
@@ -442,6 +456,7 @@ class FilterEditor extends StatefulWidget {
         heroTag: heroTag,
         configs: configs,
         onUpdateUI: onUpdateUI,
+        loadingWidget: loadingWidget,
         activeFilters: activeFilters,
         convertToUint8List: convertToUint8List,
       );
@@ -458,6 +473,7 @@ class FilterEditor extends StatefulWidget {
         heroTag: heroTag,
         configs: configs,
         onUpdateUI: onUpdateUI,
+        loadingWidget: loadingWidget,
         activeFilters: activeFilters,
         convertToUint8List: convertToUint8List,
       );
@@ -480,6 +496,7 @@ class FilterEditorState extends State<FilterEditor> {
   double filterOpacity = 1;
   bool _createScreenshot = false;
   ScreenshotController screenshotController = ScreenshotController();
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -504,19 +521,17 @@ class FilterEditorState extends State<FilterEditor> {
 
     if (widget.convertToUint8List) {
       _createScreenshot = true;
-      LoadingDialog loading = LoadingDialog()
-        ..show(
-          context,
-          i18n: widget.i18n,
-          theme: widget.theme,
-          designMode: widget.designMode,
-          message: widget.i18n.filterEditor.applyFilterDialogMsg,
-          imageEditorTheme: widget.imageEditorTheme,
-        );
+
+      setState(() {
+        _isLoading = true;
+      });
+
       var data = await screenshotController.capture();
       _createScreenshot = false;
       if (mounted) {
-        loading.hide(context);
+        setState(() {
+          _isLoading = false;
+        });
         Navigator.pop(context, data);
       }
     } else {
@@ -539,11 +554,19 @@ class FilterEditorState extends State<FilterEditor> {
           tooltipTheme: widget.theme.tooltipTheme.copyWith(preferBelow: true)),
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: widget.imageEditorTheme.uiOverlayStyle,
-        child: Scaffold(
-          backgroundColor: widget.imageEditorTheme.filterEditor.background,
-          appBar: _buildAppBar(),
-          body: _buildBody(),
-          bottomNavigationBar: _buildBottomNavBar(),
+        child: Stack(
+          children: [
+            Scaffold(
+              backgroundColor: widget.imageEditorTheme.filterEditor.background,
+              appBar: _buildAppBar(),
+              body: _buildBody(),
+              bottomNavigationBar: _buildBottomNavBar(),
+            ),
+            if (_isLoading)
+              Positioned.fill(
+                child: widget.loadingWidget ?? const DefaultLoadingWidget(),
+              )
+          ],
         ),
       ),
     );

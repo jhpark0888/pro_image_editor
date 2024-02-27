@@ -5,6 +5,7 @@ import 'package:extended_image/extended_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Image;
 import 'package:flutter/services.dart';
+import 'package:pro_image_editor/widgets/default_loading_widget.dart';
 
 import '../../models/crop_rotate_editor_response.dart';
 import '../../models/custom_widgets.dart';
@@ -79,6 +80,8 @@ class CropRotateEditor extends StatefulWidget {
   /// A callback function that can be used to update the UI from custom widgets.
   final Function? onUpdateUI;
 
+  final Widget? loadingWidget;
+
   /// Private constructor for creating a `CropRotateEditor` widget.
   const CropRotateEditor._({
     super.key,
@@ -87,6 +90,7 @@ class CropRotateEditor extends StatefulWidget {
     this.networkUrl,
     this.file,
     this.onUpdateUI,
+    this.loadingWidget,
     required this.theme,
     required this.i18n,
     required this.customWidgets,
@@ -157,6 +161,7 @@ class CropRotateEditor extends StatefulWidget {
     CropRotateEditorConfigs configs = const CropRotateEditorConfigs(),
     Uint8List? bytesWithLayers,
     Function? onUpdateUI,
+    Widget? loadingWidget,
   }) {
     return CropRotateEditor._(
       key: key,
@@ -172,6 +177,7 @@ class CropRotateEditor extends StatefulWidget {
       heroTag: heroTag,
       configs: configs,
       onUpdateUI: onUpdateUI,
+      loadingWidget: loadingWidget,
     );
   }
 
@@ -228,6 +234,7 @@ class CropRotateEditor extends StatefulWidget {
     CropRotateEditorConfigs configs = const CropRotateEditorConfigs(),
     Uint8List? bytesWithLayers,
     Function? onUpdateUI,
+    Widget? loadingWidget,
   }) {
     return CropRotateEditor._(
       key: key,
@@ -243,6 +250,7 @@ class CropRotateEditor extends StatefulWidget {
       imageSize: imageSize,
       heroTag: heroTag,
       configs: configs,
+      loadingWidget: loadingWidget,
     );
   }
 
@@ -298,6 +306,7 @@ class CropRotateEditor extends StatefulWidget {
     CropRotateEditorConfigs configs = const CropRotateEditorConfigs(),
     Uint8List? bytesWithLayers,
     Function? onUpdateUI,
+    Widget? loadingWidget,
   }) {
     return CropRotateEditor._(
       key: key,
@@ -313,6 +322,7 @@ class CropRotateEditor extends StatefulWidget {
       heroTag: heroTag,
       configs: configs,
       onUpdateUI: onUpdateUI,
+      loadingWidget: loadingWidget,
     );
   }
 
@@ -360,6 +370,7 @@ class CropRotateEditor extends StatefulWidget {
     CropRotateEditorConfigs configs = const CropRotateEditorConfigs(),
     Uint8List? bytesWithLayers,
     Function? onUpdateUI,
+    Widget? loadingWidget,
   }) {
     return CropRotateEditor._(
       key: key,
@@ -375,6 +386,7 @@ class CropRotateEditor extends StatefulWidget {
       heroTag: heroTag,
       configs: configs,
       onUpdateUI: onUpdateUI,
+      loadingWidget: loadingWidget,
     );
   }
 
@@ -424,6 +436,7 @@ class CropRotateEditor extends StatefulWidget {
     CropRotateEditorConfigs configs = const CropRotateEditorConfigs(),
     Uint8List? bytesWithLayers,
     Function? onUpdateUI,
+    Widget? loadingWidget,
     Uint8List? byteArray,
     File? file,
     String? assetPath,
@@ -444,6 +457,7 @@ class CropRotateEditor extends StatefulWidget {
         heroTag: heroTag,
         configs: configs,
         onUpdateUI: onUpdateUI,
+        loadingWidget: loadingWidget,
       );
     } else if (file != null) {
       return CropRotateEditor.file(
@@ -460,6 +474,7 @@ class CropRotateEditor extends StatefulWidget {
         heroTag: heroTag,
         configs: configs,
         onUpdateUI: onUpdateUI,
+        loadingWidget: loadingWidget,
       );
     } else if (networkUrl != null) {
       return CropRotateEditor.network(
@@ -476,6 +491,7 @@ class CropRotateEditor extends StatefulWidget {
         heroTag: heroTag,
         configs: configs,
         onUpdateUI: onUpdateUI,
+        loadingWidget: loadingWidget,
       );
     } else if (assetPath != null) {
       return CropRotateEditor.asset(
@@ -492,6 +508,7 @@ class CropRotateEditor extends StatefulWidget {
         heroTag: heroTag,
         configs: configs,
         onUpdateUI: onUpdateUI,
+        loadingWidget: loadingWidget,
       );
     } else {
       throw ArgumentError(
@@ -516,6 +533,7 @@ class CropRotateEditorState extends State<CropRotateEditor> {
   double? _aspectRatio;
   bool _cropping = false;
   bool _inited = false;
+  bool _isLoading = false;
 
   EditorCropLayerPainter? _cropLayerPainter;
 
@@ -575,15 +593,11 @@ class CropRotateEditorState extends State<CropRotateEditor> {
     if (_cropping) return;
 
     _cropping = true;
-    LoadingDialog loading = LoadingDialog()
-      ..show(
-        context,
-        i18n: widget.i18n,
-        theme: widget.theme,
-        designMode: widget.designMode,
-        message: widget.i18n.cropRotateEditor.applyChangesDialogMsg,
-        imageEditorTheme: widget.imageEditorTheme,
-      );
+
+    setState(() {
+      _isLoading = true;
+    });
+
     Uint8List? fileData;
 
     var cropPadding = _editor.editAction?.cropRectPadding;
@@ -623,7 +637,9 @@ class CropRotateEditorState extends State<CropRotateEditor> {
           );
           var decodedImage = await decodeImageFromList(res.bytes!);
           if (mounted) {
-            await loading.hide(context);
+            setState(() {
+              _isLoading = false;
+            });
             _cropping = false;
             if (mounted) {
               Navigator.pop(
@@ -715,17 +731,25 @@ class CropRotateEditorState extends State<CropRotateEditor> {
           data: widget.theme.copyWith(
               tooltipTheme:
                   widget.theme.tooltipTheme.copyWith(preferBelow: true)),
-          child: Scaffold(
-            backgroundColor:
-                widget.imageEditorTheme.cropRotateEditor.background,
-            appBar: _buildAppBar(constraints),
-            body: SafeArea(
-              child: Stack(
-                fit: StackFit.expand,
-                alignment: Alignment.center,
-                children: _buildBody(),
+          child: Stack(
+            children: [
+              Scaffold(
+                backgroundColor:
+                    widget.imageEditorTheme.cropRotateEditor.background,
+                appBar: _buildAppBar(constraints),
+                body: SafeArea(
+                  child: Stack(
+                    fit: StackFit.expand,
+                    alignment: Alignment.center,
+                    children: _buildBody(),
+                  ),
+                ),
               ),
-            ),
+              if (_isLoading)
+                Positioned.fill(
+                  child: widget.loadingWidget ?? const DefaultLoadingWidget(),
+                ),
+            ],
           ),
         ),
       );
