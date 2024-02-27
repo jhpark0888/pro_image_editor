@@ -6,7 +6,7 @@ class DefaultLoadingWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white70,
+      color: Colors.black.withOpacity(0.7),
       child: const Center(
         child: CircularProgressIndicator(),
       ),
