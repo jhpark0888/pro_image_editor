@@ -21,7 +21,6 @@ import '../../utils/design_mode.dart';
 import 'utils/aspect_ratio_button.dart';
 import '../../models/aspect_ratio_item.dart';
 import '../../widgets/flat_icon_text_button.dart';
-import '../../widgets/loading_dialog.dart';
 
 /// The `CropRotateEditor` widget is used for cropping and rotating images.
 /// It provides various constructors for loading images from different sources and allows users to crop and rotate the image.

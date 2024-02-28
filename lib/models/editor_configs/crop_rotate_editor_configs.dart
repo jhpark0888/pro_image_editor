@@ -33,6 +33,8 @@ class CropRotateEditorConfigs {
   /// `CropAspectRatios.custom` value.
   final double? initAspectRatio;
 
+  final bool initForceAspectRatio;
+
   /// Creates an instance of CropRotateEditorConfigs with optional settings.
   ///
   /// By default, all options are enabled, and the initial aspect ratio is set
@@ -41,6 +43,7 @@ class CropRotateEditorConfigs {
     this.enabled = true,
     this.canRotate = true,
     this.canChangeAspectRatio = true,
+    this.initForceAspectRatio = false,
     this.initAspectRatio = CropAspectRatios.custom,
   });
 }

@@ -32,7 +32,6 @@ import 'models/editor_configs/pro_image_editor_configs.dart';
 import 'widgets/adaptive_dialog.dart';
 import 'widgets/flat_icon_text_button.dart';
 import 'widgets/layer_widget.dart';
-import 'widgets/loading_dialog.dart';
 import 'widgets/pro_image_editor_desktop_mode.dart';
 
 typedef ImageEditingCompleteCallback = Future<void> Function(Uint8List bytes);
@@ -89,10 +88,10 @@ class ProImageEditor extends StatefulWidget {
   /// A callback function that can be used to update the UI from custom widgets.
   final Future Function(BuildContext)? onCloseWraning;
 
-  final Widget? loadingWidget;
-
   /// Configuration options for the image editor.
   final ProImageEditorConfigs configs;
+
+  final Widget? loadingWidget;
 
   /// Creates a `ProImageEditor` widget for image editing.
   ///
@@ -474,6 +473,7 @@ class ProImageEditorState extends State<ProImageEditor> {
   @override
   void initState() {
     super.initState();
+
     _mouseMoveStream = StreamController.broadcast();
     _screenshotCtrl = ScreenshotController();
     _scaleDebounce = Debounce(const Duration(milliseconds: 100));
@@ -499,6 +499,12 @@ class ProImageEditorState extends State<ProImageEditor> {
     if (kIsWeb) {
       _browserContextMenuBeforeEnabled = BrowserContextMenu.enabled;
       BrowserContextMenu.disableContextMenu();
+    }
+
+    if (widget.configs.cropRotateEditorConfigs.initForceAspectRatio) {
+      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+        openCropEditor(forceCrop: true);
+      });
     }
   }
 
@@ -590,17 +596,29 @@ class ProImageEditorState extends State<ProImageEditor> {
   /// Add a cropped image to the editor.
   ///
   /// This method adds a cropped image to the editor and updates the editing state.
-  void _addCroppedImg(List<Layer> layers, EditorImage image) {
+  void _addCroppedImg(
+      List<Layer> layers, EditorImage image, bool initForceCrop) {
     _cleanForwardChanges();
-    _imgStateHistory.add(image);
-    _stateHistory.add(
-      EditorStateHistory(
-        bytesRefIndex: _imgStateHistory.length - 1,
+
+    if (initForceCrop) {
+      _imgStateHistory[_editPosition] = image;
+      _stateHistory[_editPosition] = EditorStateHistory(
+        bytesRefIndex: _editPosition,
         layers: layers,
         filters: _filters,
-      ),
-    );
-    _editPosition = _stateHistory.length - 1;
+      );
+    } else {
+      _imgStateHistory.add(image);
+      _stateHistory.add(
+        EditorStateHistory(
+          bytesRefIndex: _imgStateHistory.length - 1,
+          layers: layers,
+          filters: _filters,
+        ),
+      );
+
+      _editPosition = _stateHistory.length - 1;
+    }
   }
 
   /// Add a new layer to the image editor.
@@ -1266,7 +1284,7 @@ class ProImageEditorState extends State<ProImageEditor> {
   /// Opens the crop editor.
   ///
   /// This method opens the crop editor, allowing the user to crop and rotate the image.
-  void openCropEditor() async {
+  void openCropEditor({bool forceCrop = false}) async {
     if (_activeCrop) return;
     EditorImage img = EditorImage(
       assetPath: _image.assetPath,
@@ -1398,13 +1416,19 @@ class ProImageEditorState extends State<ProImageEditor> {
             updatedLayers.add(layer);
           }
 
-          _addCroppedImg(updatedLayers, EditorImage(byteArray: res.bytes));
+          _addCroppedImg(
+            updatedLayers,
+            EditorImage(byteArray: res.bytes),
+            forceCrop,
+          );
           _pixelRatio = max(heightRatio, widthRatio);
           _imageWidth = w / _pixelRatio;
           _imageHeight = h / _pixelRatio;
           setState(() {});
           widget.onUpdateUI?.call();
         }
+      } else {
+        if (forceCrop) closeEditor();
       }
     });
   }
