@@ -126,6 +126,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           bytes,
                           key: _editor,
                           onImageEditingComplete: (bytes) async {
+                            print('bytes: ${bytes.length}');
                             Navigator.pop(context);
                           },
                           configs: ProImageEditorConfigs(
