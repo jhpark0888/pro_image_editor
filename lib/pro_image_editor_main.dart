@@ -1585,11 +1585,6 @@ class ProImageEditorState extends State<ProImageEditor> {
   /// Before returning the edited image, a loading dialog is displayed to indicate that the operation
   /// is in progress.
   void doneEditing() async {
-    if (_editPosition <= 0 &&
-        _layers.isEmpty &&
-        !widget.configs.cropRotateEditorConfigs.initForceAspectRatio) {
-      return closeEditor();
-    }
     _doneEditing = true;
 
     setState(() {
