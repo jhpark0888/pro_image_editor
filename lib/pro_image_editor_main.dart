@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -523,6 +524,20 @@ class ProImageEditorState extends State<ProImageEditor> {
       BrowserContextMenu.enableContextMenu();
     }
     super.dispose();
+  }
+
+  void _onLoading() {
+    setState(() {
+      _isLoading = true;
+    });
+  }
+
+  void _onLoadingComplete() {
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   /// Handles keyboard events.
@@ -1296,14 +1311,12 @@ class ProImageEditorState extends State<ProImageEditor> {
     if (_layers.isNotEmpty || _filters.isNotEmpty) {
       _activeCrop = true;
 
-      setState(() {
-        _isLoading = true;
-      });
+      _onLoading();
 
       bytesWithLayers = await _screenshotCtrl.capture(
         pixelRatio: _pixelRatio,
       );
-      if (mounted) setState(() => _isLoading = false);
+      _onLoadingComplete();
     }
     _activeCrop = false;
     if (!mounted) return;
@@ -1587,21 +1600,18 @@ class ProImageEditorState extends State<ProImageEditor> {
   void doneEditing() async {
     _doneEditing = true;
 
-    setState(() {
-      _isLoading = true;
-    });
+    _onLoading();
 
-    var bytes = await _screenshotCtrl.capture(pixelRatio: _pixelRatio);
+    Uint8List? image = await _screenshotCtrl.capture(pixelRatio: _pixelRatio);
 
-    if (bytes != null) {
-      await widget.onImageEditingComplete(bytes);
+    if (image == null) {
+      _onLoadingComplete();
+      return;
     }
 
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+    await widget.onImageEditingComplete(image);
+
+    _onLoadingComplete();
 
     widget.onCloseEditor?.call();
   }
