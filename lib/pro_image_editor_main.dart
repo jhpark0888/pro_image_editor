@@ -368,10 +368,10 @@ class ProImageEditorState extends State<ProImageEditor> {
   bool _showRotationHelperLine = false;
 
   /// Flag indicating if the device can vibrate.
-  bool _deviceCanVibrate = false;
+  // bool _deviceCanVibrate = false;
 
   /// Flag indicating if the device can perform custom vibration.
-  bool _deviceCanCustomVibrate = false;
+  // bool _deviceCanCustomVibrate = false;
 
   /// Flag indicating if rotation helper lines have started.
   bool _rotationStartedHelper = false;
@@ -492,9 +492,9 @@ class ProImageEditorState extends State<ProImageEditor> {
     _stateHistory
         .add(EditorStateHistory(bytesRefIndex: 0, layers: [], filters: []));
 
-    Vibration.hasVibrator().then((value) => _deviceCanVibrate = value ?? false);
-    Vibration.hasCustomVibrationsSupport()
-        .then((value) => _deviceCanCustomVibrate = value ?? false);
+    // Vibration.hasVibrator().then((value) => _deviceCanVibrate = value ?? false);
+    // Vibration.hasCustomVibrationsSupport()
+    //     .then((value) => _deviceCanCustomVibrate = value ?? false);
 
     ServicesBinding.instance.keyboard.addHandler(_onKey);
     if (kIsWeb) {
@@ -848,19 +848,29 @@ class ProImageEditorState extends State<ProImageEditor> {
   /// This function is used to provide haptic feedback when helper lines are interacted
   /// with, enhancing the user experience.
   void _lineHitVibrate() {
-    if (widget.configs.helperLines.hitVibration && _deviceCanVibrate) {
-      if (_deviceCanCustomVibrate) {
-        Vibration.vibrate(duration: 3);
-      } else if (Platform.isAndroid) {
-        // On old android devices we can stop the vibration after 3 milliseconds
-        // iOS: only works for custom haptic vibrations using CHHapticEngine.
-        // This will set `_deviceCanCustomVibrate` anyway to true so it's impossible to fake it.
-        Vibration.vibrate();
-        Future.delayed(const Duration(milliseconds: 3)).whenComplete(() {
-          Vibration.cancel();
-        });
-      }
+    if (!widget.configs.helperLines.hitVibration) return;
+
+    if (Platform.isIOS) {
+      HapticFeedback.mediumImpact();
     }
+
+    if (Platform.isAndroid) {
+      HapticFeedback.vibrate();
+    }
+
+    // if (widget.configs.helperLines.hitVibration && _deviceCanVibrate) {
+    //   if (_deviceCanCustomVibrate) {
+    //     Vibration.vibrate(duration: 3, amplitude: 0);
+    //   } else if (Platform.isAndroid) {
+    //     // On old android devices we can stop the vibration after 3 milliseconds
+    //     // iOS: only works for custom haptic vibrations using CHHapticEngine.
+    //     // This will set `_deviceCanCustomVibrate` anyway to true so it's impossible to fake it.
+    //     Vibration.vibrate();
+    //     Future.delayed(const Duration(milliseconds: 3)).whenComplete(() {
+    //       Vibration.cancel();
+    //     });
+    //   }
+    // }
   }
 
   /// Handle the start of a scaling operation.
