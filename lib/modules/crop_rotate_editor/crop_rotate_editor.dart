@@ -659,7 +659,7 @@ class CropRotateEditorState extends State<CropRotateEditor> {
 
   /// Rotates the image clockwise.
   void rotate() {
-    _editor.rotate(right: true);
+    _editor.rotate(right: false);
   }
 
   /// Opens a dialog to select from predefined aspect ratios.
