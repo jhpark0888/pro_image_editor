@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math';
 import 'dart:io';
-import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -11,7 +10,6 @@ import 'package:pro_image_editor/models/import_export/utils/export_import_enum.d
 import 'package:pro_image_editor/modules/sticker_editor.dart';
 import 'package:pro_image_editor/widgets/default_loading_widget.dart';
 import 'package:screenshot/screenshot.dart';
-import 'package:vibration/vibration.dart';
 
 import 'models/history/state_history.dart';
 import 'models/history/last_position.dart';
