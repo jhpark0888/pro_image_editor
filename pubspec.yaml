@@ -38,7 +38,7 @@ dependencies:
   extended_image: ^8.2.0
   rounded_background_text: ^0.5.0
   colorfilter_generator: ^0.0.8
-  screenshot: ^2.1.0
+  screenshot: ^3.0.0
   vibration: ^1.8.4
   http: ^1.2.0
   emoji_picker_flutter: ^2.0.0
