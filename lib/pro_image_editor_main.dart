@@ -1842,6 +1842,7 @@ class ProImageEditorState extends State<ProImageEditor> {
       return PopScope(
         canPop: (_editPosition <= 0 || _doneEditing) && !_isLoading,
         onPopInvoked: (didPop) {
+          if (didPop) return;
           if (_editPosition > 0 && !_doneEditing) {
             closeWarning();
           }
