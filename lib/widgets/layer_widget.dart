@@ -246,7 +246,10 @@ class _LayerWidgetState extends State<LayerWidget> {
               behavior: HitTestBehavior.translucent,
               onPointerDown: _onPointerDown,
               onPointerUp: _onPointerUp,
-              child: _buildContent(),
+              child: Opacity(
+                opacity: _layer.opacity,
+                child: _buildContent(),
+              ),
             ),
           ),
         ),

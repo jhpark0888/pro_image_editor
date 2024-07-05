@@ -17,6 +17,9 @@ class Layer {
   /// Flags to control horizontal and vertical flipping.
   late bool flipX, flipY;
 
+  /// The Opacity value of the widget.
+  late double opacity;
+
   /// A unique identifier for the layer.
   late String id;
 
@@ -33,6 +36,7 @@ class Layer {
     Offset? offset,
     double? rotation,
     double? scale,
+    double? opacity,
     bool? flipX,
     bool? flipY,
   }) {
@@ -40,6 +44,7 @@ class Layer {
     this.id = id ?? _generateUniqueId();
     this.offset = offset ?? const Offset(64, 64);
     this.rotation = rotation ?? 0;
+    this.opacity = opacity ?? 1;
     this.scale = scale ?? 1;
     this.flipX = flipX ?? false;
     this.flipY = flipY ?? false;
@@ -54,6 +59,7 @@ class Layer {
       flipY: map['flipY'] ?? false,
       offset: Offset(map['x'] ?? 0, map['y'] ?? 0),
       rotation: map['rotation'] ?? 0,
+      opacity: map['opacity'] ?? 1,
       scale: map['scale'] ?? 1,
     );
 
@@ -64,6 +70,7 @@ class Layer {
           flipY: layer.flipY,
           offset: layer.offset,
           rotation: layer.rotation,
+          opacity: layer.opacity,
           scale: layer.scale,
           text: map['text'] ?? '-',
           colorMode: LayerBackgroundColorModeE.values
@@ -81,6 +88,7 @@ class Layer {
           offset: layer.offset,
           rotation: layer.rotation,
           scale: layer.scale,
+          opacity: layer.opacity,
           emoji: map['emoji'],
         );
       case 'painting':
@@ -90,6 +98,7 @@ class Layer {
           offset: layer.offset,
           rotation: layer.rotation,
           scale: layer.scale,
+          opacity: layer.opacity,
           rawSize: Size(
             map['rawSize']?['w'] ?? 0,
             map['rawSize']?['h'] ?? 0,
@@ -118,6 +127,7 @@ class Layer {
           offset: layer.offset,
           rotation: layer.rotation,
           scale: layer.scale,
+          opacity: layer.opacity,
           sticker: sticker,
         );
       default:
@@ -153,6 +163,7 @@ class Layer {
       'x': offset.dx,
       'y': offset.dy,
       'rotation': rotation,
+      'opacity': opacity,
       'scale': scale,
       'flipX': flipX,
       'flipY': flipY,
@@ -201,6 +212,7 @@ class TextLayerData extends Layer {
     super.offset,
     super.rotation,
     super.scale,
+    super.opacity,
     super.id,
     super.flipX,
     super.flipY,
@@ -248,6 +260,7 @@ class EmojiLayerData extends Layer {
     super.offset,
     super.rotation,
     super.scale,
+    super.opacity,
     super.id,
     super.flipX,
     super.flipY,
@@ -297,6 +310,7 @@ class PaintingLayerData extends Layer {
     super.offset,
     super.rotation,
     super.scale,
+    super.opacity,
     super.id,
     super.flipX,
     super.flipY,
@@ -345,6 +359,7 @@ class StickerLayerData extends Layer {
     super.offset,
     super.rotation,
     super.scale,
+    super.opacity,
     super.id,
     super.flipX,
     super.flipY,

@@ -33,6 +33,9 @@ class TextEditorConfigs {
   /// The initial text alignment for the layer.
   final TextAlign initialTextAlign;
 
+  /// The initial opacity for the layer.
+  final double initialOpacity;
+
   /// The initial background color mode for the layer.
   final LayerBackgroundColorModeE initialBackgroundColorMode;
 
@@ -46,6 +49,7 @@ class TextEditorConfigs {
     this.canToggleBackgroundMode = true,
     this.initFontSize = 24.0,
     this.initialTextAlign = TextAlign.center,
+    this.initialOpacity = 1.0,
     this.initialBackgroundColorMode =
         LayerBackgroundColorModeE.backgroundAndColor,
   });

@@ -78,6 +78,7 @@ class TextEditorState extends State<TextEditor> {
   Color _primaryColor = Colors.black;
   late TextAlign align;
   late LayerBackgroundColorModeE backgroundColorMode;
+  late double opacity;
   int _numLines = 0;
   double _colorPosition = 0;
 
@@ -86,6 +87,7 @@ class TextEditorState extends State<TextEditor> {
     super.initState();
     align = widget.configs.initialTextAlign;
     backgroundColorMode = widget.configs.initialBackgroundColorMode;
+    opacity = widget.configs.initialOpacity;
     _initializeFromLayer();
     _setupTextControllerListener();
   }
@@ -194,6 +196,7 @@ class TextEditorState extends State<TextEditor> {
           align: align,
           colorMode: backgroundColorMode,
           colorPickerPosition: _colorPosition,
+          opacity: opacity,
         ),
       );
     } else {
@@ -354,6 +357,37 @@ class TextEditorState extends State<TextEditor> {
               ),
             ),
           ),
+          Align(
+            alignment: Alignment.topLeft,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: SizedBox(
+                width: 40,
+                height: min(
+                  350,
+                  MediaQuery.of(context).size.height -
+                      MediaQuery.of(context).viewInsets.bottom -
+                      kToolbarHeight -
+                      MediaQuery.of(context).padding.top -
+                      30,
+                ),
+                child: RotatedBox(
+                  quarterTurns: 3,
+                  child: Slider(
+                    min: 0,
+                    max: 1,
+                    divisions: 100,
+                    value: opacity,
+                    onChanged: (value) {
+                      opacity = value;
+                      setState(() {});
+                      widget.onUpdateUI?.call();
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -370,65 +404,68 @@ class TextEditorState extends State<TextEditor> {
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: SizedBox(
               height: widget.configs.initFontSize * _numLines * 1.35 + 15,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Hero(
-                    tag: widget.heroTag ?? 'Text-Image-Editor-Empty-Hero',
-                    createRectTween: (begin, end) =>
-                        RectTween(begin: begin, end: end),
-                    child: RoundedBackgroundText(
-                      _textCtrl.text,
-                      backgroundColor: _getBackgroundColor,
-                      textAlign: align,
-                      style: TextStyle(
-                        color: _getTextColor,
-                        fontSize: widget.configs.initFontSize,
-                        fontWeight: FontWeight.w400,
-                        height: 1.35,
-                        letterSpacing: 0,
+              child: Opacity(
+                opacity: opacity,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Hero(
+                      tag: widget.heroTag ?? 'Text-Image-Editor-Empty-Hero',
+                      createRectTween: (begin, end) =>
+                          RectTween(begin: begin, end: end),
+                      child: RoundedBackgroundText(
+                        _textCtrl.text,
+                        backgroundColor: _getBackgroundColor,
+                        textAlign: align,
+                        style: TextStyle(
+                          color: _getTextColor,
+                          fontSize: widget.configs.initFontSize,
+                          fontWeight: FontWeight.w400,
+                          height: 1.35,
+                          letterSpacing: 0,
+                        ),
                       ),
                     ),
-                  ),
-                  IntrinsicWidth(
-                    child: TextField(
-                      controller: _textCtrl,
-                      focusNode: _focus,
-                      keyboardType: TextInputType.multiline,
-                      textInputAction: TextInputAction.newline,
-                      textCapitalization: TextCapitalization.sentences,
-                      textAlign:
-                          _textCtrl.text.isEmpty ? TextAlign.center : align,
-                      maxLines: null,
-                      cursorColor:
-                          widget.imageEditorTheme.textEditor.inputCursorColor,
-                      cursorHeight: widget.configs.initFontSize * 1.2,
-                      scrollPhysics: const NeverScrollableScrollPhysics(),
-                      decoration: InputDecoration(
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.fromLTRB(
-                              12, _numLines <= 1 ? 4 : 0, 12, 0),
-                          hintText: _textCtrl.text.isEmpty
-                              ? widget.i18n.textEditor.inputHintText
-                              : '',
-                          hintStyle: TextStyle(
-                            color: widget
-                                .imageEditorTheme.textEditor.inputHintColor,
-                            fontSize: widget.configs.initFontSize,
-                            fontWeight: FontWeight.w400,
-                            height: 1.35,
-                          )),
-                      style: TextStyle(
-                        color: Colors.transparent,
-                        fontSize: widget.configs.initFontSize,
-                        fontWeight: FontWeight.w400,
-                        height: 1.35,
-                        letterSpacing: 0,
+                    IntrinsicWidth(
+                      child: TextField(
+                        controller: _textCtrl,
+                        focusNode: _focus,
+                        keyboardType: TextInputType.multiline,
+                        textInputAction: TextInputAction.newline,
+                        textCapitalization: TextCapitalization.sentences,
+                        textAlign:
+                            _textCtrl.text.isEmpty ? TextAlign.center : align,
+                        maxLines: null,
+                        cursorColor:
+                            widget.imageEditorTheme.textEditor.inputCursorColor,
+                        cursorHeight: widget.configs.initFontSize * 1.2,
+                        scrollPhysics: const NeverScrollableScrollPhysics(),
+                        decoration: InputDecoration(
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.fromLTRB(
+                                12, _numLines <= 1 ? 4 : 0, 12, 0),
+                            hintText: _textCtrl.text.isEmpty
+                                ? widget.i18n.textEditor.inputHintText
+                                : '',
+                            hintStyle: TextStyle(
+                              color: widget
+                                  .imageEditorTheme.textEditor.inputHintColor,
+                              fontSize: widget.configs.initFontSize,
+                              fontWeight: FontWeight.w400,
+                              height: 1.35,
+                            )),
+                        style: TextStyle(
+                          color: Colors.transparent,
+                          fontSize: widget.configs.initFontSize,
+                          fontWeight: FontWeight.w400,
+                          height: 1.35,
+                          letterSpacing: 0,
+                        ),
+                        autofocus: true,
                       ),
-                      autofocus: true,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
