@@ -1204,6 +1204,7 @@ class ProImageEditorState extends State<ProImageEditor> {
         ..colorMode = layer.colorMode
         ..colorPickerPosition = layer.colorPickerPosition
         ..align = layer.align
+        ..opacity = layer.opacity
         ..id = layerData.id
         ..flipX = layerData.flipX
         ..flipY = layerData.flipY

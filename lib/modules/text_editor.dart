@@ -105,6 +105,7 @@ class TextEditorState extends State<TextEditor> {
       _textCtrl.text = widget.layer!.text;
       align = widget.layer!.align;
       backgroundColorMode = widget.layer!.colorMode!;
+      opacity = widget.layer!.opacity;
       _primaryColor =
           backgroundColorMode == LayerBackgroundColorModeE.background
               ? widget.layer!.background
