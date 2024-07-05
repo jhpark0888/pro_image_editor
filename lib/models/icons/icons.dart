@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'icons_state_history_importer.dart';
 import 'icons_crop_rotate_editor.dart';
 import 'icons_emoji_editor.dart';
 import 'icons_filter_editor.dart';
@@ -28,6 +29,9 @@ class ImageEditorIcons {
   /// The icon for applying changes in the editor.
   final IconData applyChanges;
 
+  /// The icon for saving the last action.
+  final IconData saveAction;
+
   /// The icon for undoing the last action.
   final IconData undoAction;
 
@@ -54,6 +58,9 @@ class ImageEditorIcons {
 
   /// Icons for the Sticker Editor component.
   final IconsStickerEditor stickerEditor;
+
+  /// Icons for the State History Importer component.
+  final IconsStateHistoryImporter stateHistoryImporter;
 
   /// Creates an instance of [ImageEditorIcons] with customizable icon settings.
   ///
@@ -121,7 +128,9 @@ class ImageEditorIcons {
     this.filterEditor = const IconsFilterEditor(),
     this.emojiEditor = const IconsEmojiEditor(),
     this.stickerEditor = const IconsStickerEditor(),
+    this.stateHistoryImporter = const IconsStateHistoryImporter(),
     this.closeEditor = Icons.clear,
+    this.saveAction = Icons.save,
     this.doneIcon = Icons.done,
     this.applyChanges = Icons.done,
     this.backButton = Icons.arrow_back,

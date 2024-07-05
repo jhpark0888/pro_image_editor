@@ -7,6 +7,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pro_image_editor/models/import_export/utils/export_import_enum.dart';
+import 'package:pro_image_editor/modules/state_history_importer.dart';
 import 'package:pro_image_editor/modules/sticker_editor.dart';
 import 'package:pro_image_editor/widgets/default_loading_widget.dart';
 import 'package:screenshot/screenshot.dart';
@@ -1564,6 +1565,28 @@ class ProImageEditorState extends State<ProImageEditor> {
     widget.onUpdateUI?.call();
   }
 
+  /// Opens the sticker editor as a modal bottom sheet.
+  void openStateHistoryImportper() async {
+    ServicesBinding.instance.keyboard.removeHandler(_onKey);
+    ImportStateHistory? stateHistory = await showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.black,
+      builder: (BuildContext context) => StateHistoryImporter(
+        i18n: widget.configs.i18n,
+        imageEditorTheme: widget.configs.imageEditorTheme,
+        designMode: widget.configs.designMode,
+        configs: widget.configs.stateHistoryImporterConfigs!,
+      ),
+    );
+    ServicesBinding.instance.keyboard.addHandler(_onKey);
+    if (stateHistory == null || !mounted) return;
+
+    importStateHistory(stateHistory);
+
+    setState(() {});
+    widget.onUpdateUI?.call();
+  }
+
   /// Undo the last editing action.
   ///
   /// This function allows the user to undo the most recent editing action performed on the image.
@@ -1907,6 +1930,27 @@ class ProImageEditorState extends State<ProImageEditor> {
                 ),
                 const Spacer(),
                 IconButton(
+                  key: const ValueKey('StateHistorySaveButton'),
+                  tooltip: widget.configs.i18n.save,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  icon: Icon(
+                    widget.configs.icons.saveAction,
+                    color: _editPosition > 0 &&
+                            _stateHistory.last.layers.isNotEmpty
+                        ? Colors.white
+                        : Colors.white.withAlpha(80),
+                  ),
+                  onPressed: () {
+                    if (_editPosition <= 0) return;
+                    if (_stateHistory.last.layers.isEmpty) return;
+
+                    ExportStateHistory export = exportStateHistory();
+                    widget.configs.stateHistoryImporterConfigs
+                        ?.onExportStateHistory
+                        ?.call(export);
+                  },
+                ),
+                IconButton(
                   key: const ValueKey('TextEditorMainUndoButton'),
                   tooltip: widget.configs.i18n.undo,
                   padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -2141,6 +2185,24 @@ class ProImageEditorState extends State<ProImageEditor> {
                                     color: Colors.white,
                                   ),
                                   onPressed: openStickerEditor,
+                                ),
+                              if (widget.configs.stateHistoryImporterConfigs
+                                      ?.enabled ==
+                                  true)
+                                FlatIconTextButton(
+                                  key: const ValueKey(
+                                      'open-state-history-importer-btn'),
+                                  label: Text(
+                                      widget.configs.i18n.stateHistoryImporter
+                                          .bottomNavigationBarText,
+                                      style: bottomTextStyle),
+                                  icon: Icon(
+                                    widget.configs.icons.stateHistoryImporter
+                                        .bottomNavBar,
+                                    size: bottomIconSize,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: openStateHistoryImportper,
                                 ),
                             ],
                           ),

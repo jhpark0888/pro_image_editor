@@ -1,3 +1,4 @@
+import 'i18n_state_history_importer.dart';
 import 'i18n_crop_rotate_editor.dart';
 import 'i18n_emoji_editor.dart';
 import 'i18n_filter_editor.dart';
@@ -111,6 +112,9 @@ class I18n {
   /// Translations and messages specific to the sticker editor.
   final I18nStickerEditor stickerEditor;
 
+  /// Translations and messages specific to the state history importer.
+  final I18nStateHistoryImporter stateHistoryImporter;
+
   /// Translations and messages specific to the crop and rotate editor.
   final I18nCropRotateEditor cropRotateEditor;
 
@@ -119,6 +123,9 @@ class I18n {
 
   /// Text for the "Cancel" action.
   final String cancel;
+
+  /// Text for the "Save" action.
+  final String save;
 
   /// Text for the "Undo" action.
   final String undo;
@@ -173,8 +180,10 @@ class I18n {
     this.filterEditor = const I18nFilterEditor(),
     this.emojiEditor = const I18nEmojiEditor(),
     this.stickerEditor = const I18nStickerEditor(),
+    this.stateHistoryImporter = const I18nStateHistoryImporter(),
     this.various = const I18nVarious(),
     this.cancel = 'Cancel',
+    this.save = 'Save',
     this.undo = 'Undo',
     this.redo = 'Redo',
     this.done = 'Done',

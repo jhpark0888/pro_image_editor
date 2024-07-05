@@ -8,7 +8,12 @@ import 'package:flutter/foundation.dart' hide Category;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:pro_image_editor/models/editor_configs/state_history_importer_configs.dart';
+import 'package:pro_image_editor/models/editor_image.dart';
+import 'package:pro_image_editor/models/layer.dart';
+import 'package:pro_image_editor/modules/filter_editor/widgets/image_with_multiple_filters.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
+import 'package:pro_image_editor/widgets/layer_widget.dart';
 import 'package:pro_image_editor/widgets/loading_dialog.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 
@@ -47,6 +52,8 @@ class _MyHomePageState extends State<MyHomePage> {
     final ByteData data = await rootBundle.load('assets/demo.png');
     return data.buffer.asUint8List();
   }
+
+  List<String> stateHistoryList = [];
 
   @override
   Widget build(BuildContext context) {
@@ -398,6 +405,109 @@ class _MyHomePageState extends State<MyHomePage> {
                                 )
                               ], */
                             ),
+                            stateHistoryImporterConfigs:
+                                StateHistoryImporterConfigs(
+                                    enabled: true,
+                                    onExportStateHistory: (export) async {
+                                      stateHistoryList
+                                          .add(await export.toJson());
+                                    },
+                                    buildStateHistories: (setLayer) {
+                                      return ListView.separated(
+                                        padding: const EdgeInsets.all(16),
+                                        itemCount: stateHistoryList.length,
+                                        shrinkWrap: true,
+                                        separatorBuilder: (context, index) =>
+                                            const SizedBox(height: 10),
+                                        itemBuilder: (context, index) {
+                                          ImportStateHistory import =
+                                              ImportStateHistory.fromJson(
+                                                  stateHistoryList[index]);
+
+                                          List<Layer> layers = import
+                                              .stateHistory[
+                                                  import.editorPosition]
+                                              .layers;
+
+                                          Widget widget = SizedBox(
+                                            width: import.imgSize.width,
+                                            height: import.imgSize.height,
+                                            child: Stack(
+                                              children: [
+                                                ImageWithMultipleFilters(
+                                                  image: EditorImage(
+                                                    byteArray: bytes,
+                                                  ),
+                                                  width: import.imgSize.width,
+                                                  height: import.imgSize.height,
+                                                  designMode:
+                                                      ImageEditorDesignModeE
+                                                          .material,
+                                                  filters: import
+                                                      .stateHistory[
+                                                          import.editorPosition]
+                                                      .filters,
+                                                ),
+                                                ...layers.map((layerItem) {
+                                                  return LayerWidget(
+                                                    key: ValueKey(layerItem.id),
+                                                    layerHoverCursor:
+                                                        const ProImageEditorConfigs()
+                                                            .imageEditorTheme
+                                                            .layerHoverCursor,
+                                                    padding: EdgeInsets.zero,
+                                                    layerData: layerItem,
+                                                    textFontSize: 16,
+                                                    emojiTextStyle:
+                                                        const EmojiEditorConfigs()
+                                                            .textStyle,
+                                                    enabledHitDetection: false,
+                                                    freeStyleHighPerformanceScaling:
+                                                        false,
+                                                    freeStyleHighPerformanceMoving:
+                                                        false,
+                                                    designMode:
+                                                        ImageEditorDesignModeE
+                                                            .material,
+                                                    stickerInitWidth: 100,
+                                                    onTap: (layer) async {},
+                                                    onTapUp: () {},
+                                                    onTapDown: () {},
+                                                    onRemoveTap: () {},
+                                                    i18n:
+                                                        const ProImageEditorConfigs()
+                                                            .i18n,
+                                                  );
+                                                }).toList(),
+                                                Positioned(
+                                                  top: 20,
+                                                  right: 20,
+                                                  child: IconButton(
+                                                    icon: const Icon(
+                                                      Icons.cancel,
+                                                    ),
+                                                    onPressed: () {
+                                                      stateHistoryList
+                                                          .remove(import);
+                                                      setState(() {});
+                                                    },
+                                                    iconSize: 24,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+
+                                          return GestureDetector(
+                                            onTap: () => setLayer(import),
+                                            child: MouseRegion(
+                                              cursor: SystemMouseCursors.click,
+                                              child: widget,
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    }),
                             designMode: ImageEditorDesignModeE.material,
                             heroTag: 'hero',
                             theme: ThemeData(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pro_image_editor/models/editor_configs/state_history_importer_configs.dart';
 import 'package:pro_image_editor/models/editor_configs/sticker_editor_configs.dart';
 import 'package:pro_image_editor/models/import_export/import_state_history.dart';
 
@@ -55,6 +56,9 @@ class ProImageEditorConfigs {
   /// Configuration options for the Sticker Editor.
   final StickerEditorConfigs? stickerEditorConfigs;
 
+  /// Configuration options for the State History Importer.
+  final StateHistoryImporterConfigs? stateHistoryImporterConfigs;
+
   /// The design mode for the Image Editor.
   final ImageEditorDesignModeE designMode;
 
@@ -92,6 +96,7 @@ class ProImageEditorConfigs {
     this.filterEditorConfigs = const FilterEditorConfigs(),
     this.emojiEditorConfigs = const EmojiEditorConfigs(),
     this.stickerEditorConfigs,
+    this.stateHistoryImporterConfigs,
     this.designMode = ImageEditorDesignModeE.material,
     this.initStateHistory,
   });
