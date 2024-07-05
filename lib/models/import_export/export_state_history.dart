@@ -1,11 +1,13 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:pro_image_editor/models/import_export/utils/export_import_enum.dart';
 import 'package:screenshot/screenshot.dart';
+
+import 'package:pro_image_editor/models/import_export/utils/export_import_enum.dart';
 
 import '../editor_image.dart';
 import '../history/state_history.dart';
@@ -170,5 +172,21 @@ class ExportStateHistory {
             .add(await _screenshotController.captureFromWidget(layer.sticker));
       }
     }
+  }
+
+  ExportStateHistory copyWith({
+    int? editorPosition,
+    Size? imgSize,
+    List<EditorImage>? imgStateHistory,
+    List<EditorStateHistory>? stateHistory,
+    ExportEditorConfigs? configs,
+  }) {
+    return ExportStateHistory(
+      stateHistory ?? this.stateHistory,
+      imgStateHistory ?? _imgStateHistory,
+      imgSize ?? _imgSize,
+      editorPosition ?? _editorPosition,
+      configs: configs ?? _configs,
+    );
   }
 }

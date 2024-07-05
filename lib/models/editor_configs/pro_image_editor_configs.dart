@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:pro_image_editor/models/editor_configs/state_history_importer_configs.dart';
-import 'package:pro_image_editor/models/editor_configs/sticker_editor_configs.dart';
 import 'package:pro_image_editor/models/import_export/import_state_history.dart';
+import 'package:pro_image_editor/models/import_export/export_state_history_configs.dart';
+import 'state_history_importer_configs.dart';
+import 'sticker_editor_configs.dart';
 
 import '../custom_widgets.dart';
 import 'crop_rotate_editor_configs.dart';
@@ -59,6 +60,9 @@ class ProImageEditorConfigs {
   /// Configuration options for the State History Importer.
   final StateHistoryImporterConfigs? stateHistoryImporterConfigs;
 
+  /// Configuration options for the Export Editor.
+  final ExportEditorConfigs exportEditorConfigs;
+
   /// The design mode for the Image Editor.
   final ImageEditorDesignModeE designMode;
 
@@ -97,6 +101,7 @@ class ProImageEditorConfigs {
     this.emojiEditorConfigs = const EmojiEditorConfigs(),
     this.stickerEditorConfigs,
     this.stateHistoryImporterConfigs,
+    this.exportEditorConfigs = const ExportEditorConfigs(),
     this.designMode = ImageEditorDesignModeE.material,
     this.initStateHistory,
   });

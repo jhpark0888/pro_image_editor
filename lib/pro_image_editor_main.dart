@@ -1581,6 +1581,8 @@ class ProImageEditorState extends State<ProImageEditor> {
         imageEditorTheme: widget.configs.imageEditorTheme,
         designMode: widget.configs.designMode,
         configs: widget.configs.stateHistoryImporterConfigs!,
+        curImageSize: Size(_imageWidth, _imageHeight),
+        editorImage: _image,
       ),
     );
     ServicesBinding.instance.keyboard.addHandler(_onKey);
@@ -1941,15 +1943,19 @@ class ProImageEditorState extends State<ProImageEditor> {
                   icon: Icon(
                     widget.configs.icons.saveAction,
                     color: _editPosition > 0 &&
-                            _stateHistory.last.layers.isNotEmpty
+                            (_stateHistory.last.layers.isNotEmpty ||
+                                _stateHistory.last.filters.isNotEmpty)
                         ? Colors.white
                         : Colors.white.withAlpha(80),
                   ),
                   onPressed: () {
                     if (_editPosition <= 0) return;
-                    if (_stateHistory.last.layers.isEmpty) return;
+                    if (_stateHistory.last.layers.isEmpty &&
+                        _stateHistory.last.filters.isEmpty) return;
 
-                    ExportStateHistory export = exportStateHistory();
+                    ExportStateHistory export = exportStateHistory(
+                      configs: widget.configs.exportEditorConfigs,
+                    );
                     widget.configs.stateHistoryImporterConfigs
                         ?.onExportStateHistory
                         ?.call(export);

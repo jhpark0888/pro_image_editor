@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:flutter/widgets.dart';
+import 'package:pro_image_editor/models/editor_image.dart';
 import 'package:pro_image_editor/models/import_export/export_state_history.dart';
 import 'package:pro_image_editor/models/import_export/import_state_history.dart';
 
@@ -48,4 +51,4 @@ class StateHistoryImporterConfigs {
 }
 
 typedef BuildStateHistories = Widget Function(
-    Function(ImportStateHistory) setLayer);
+    Function(ImportStateHistory) setLayer, Size, EditorImage);

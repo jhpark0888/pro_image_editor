@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:pro_image_editor/models/editor_configs/state_history_importer_configs.dart';
+import 'package:pro_image_editor/models/editor_image.dart';
 import 'package:pro_image_editor/models/import_export/import_state_history.dart';
 import '../models/theme/theme.dart';
 import '../models/i18n/i18n.dart';
@@ -21,6 +22,10 @@ class StateHistoryImporter extends StatefulWidget {
   /// This parameter allows you to customize the behavior and appearance of the EmojiPicker.
   final StateHistoryImporterConfigs configs;
 
+  final Size curImageSize;
+
+  final EditorImage editorImage;
+
   /// Creates an `StateHistoryImporter` widget.
   ///
   /// The [i18n] parameter is used for internationalization.
@@ -31,6 +36,8 @@ class StateHistoryImporter extends StatefulWidget {
   const StateHistoryImporter({
     super.key,
     required this.configs,
+    required this.curImageSize,
+    required this.editorImage,
     this.i18n = const I18n(),
     this.imageEditorTheme = const ImageEditorTheme(),
     this.designMode = ImageEditorDesignModeE.material,
@@ -49,7 +56,11 @@ class StateHistoryImporterState extends State<StateHistoryImporter> {
 
   @override
   Widget build(BuildContext context) {
-    return widget.configs.buildStateHistories(setLayer);
+    return widget.configs.buildStateHistories(
+      setLayer,
+      widget.curImageSize,
+      widget.editorImage,
+    );
   }
 
   void setLayer(ImportStateHistory stateHistory) {

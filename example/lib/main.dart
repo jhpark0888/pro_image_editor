@@ -380,7 +380,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               canRotate: true,
                               canChangeAspectRatio: true,
                               initAspectRatio: CropAspectRatios.custom,
-                              initForceAspectRatio: true,
+                              initForceAspectRatio: false,
                             ),
                             filterEditorConfigs: FilterEditorConfigs(
                               enabled: true,
@@ -405,6 +405,10 @@ class _MyHomePageState extends State<MyHomePage> {
                                 )
                               ], */
                             ),
+                            exportEditorConfigs: const ExportEditorConfigs(
+                              historySpan: ExportHistorySpan.current,
+                              exportCropRotate: false,
+                            ),
                             stateHistoryImporterConfigs:
                                 StateHistoryImporterConfigs(
                                     enabled: true,
@@ -412,7 +416,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                       stateHistoryList
                                           .add(await export.toJson());
                                     },
-                                    buildStateHistories: (setLayer) {
+                                    buildStateHistories:
+                                        (setLayer, imgSize, img) {
                                       return ListView.separated(
                                         padding: const EdgeInsets.all(16),
                                         itemCount: stateHistoryList.length,
@@ -424,22 +429,23 @@ class _MyHomePageState extends State<MyHomePage> {
                                               ImportStateHistory.fromJson(
                                                   stateHistoryList[index]);
 
-                                          List<Layer> layers = import
-                                              .stateHistory[
-                                                  import.editorPosition]
-                                              .layers;
+                                          List<Layer> layers =
+                                              import.stateHistory.isNotEmpty
+                                                  ? import
+                                                      .stateHistory[
+                                                          import.editorPosition]
+                                                      .layers
+                                                  : [];
 
                                           Widget widget = SizedBox(
-                                            width: import.imgSize.width,
-                                            height: import.imgSize.height,
+                                            width: imgSize.width,
+                                            height: imgSize.height,
                                             child: Stack(
                                               children: [
                                                 ImageWithMultipleFilters(
-                                                  image: EditorImage(
-                                                    byteArray: bytes,
-                                                  ),
-                                                  width: import.imgSize.width,
-                                                  height: import.imgSize.height,
+                                                  image: img,
+                                                  width: imgSize.width,
+                                                  height: imgSize.height,
                                                   designMode:
                                                       ImageEditorDesignModeE
                                                           .material,
