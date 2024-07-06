@@ -1789,32 +1789,40 @@ class ProImageEditorState extends State<ProImageEditor> {
   /// Determines whether redo actions can be performed on the current state.
   bool get canRedo => _editPosition < _stateHistory.length - 1;
 
+  static void calculateSizeAndPositionImport(
+    ImportStateHistory import,
+    double imgWidth,
+    double imgHeight,
+  ) {
+    var imgSize = import.imgSize;
+    for (var el in import.stateHistory) {
+      for (var layer in el.layers) {
+        // Calculate scaling factors for width and height
+        double scaleWidth = imgWidth / imgSize.width;
+        double scaleHeight = imgHeight / imgSize.height;
+
+        if (scaleWidth == 0 || scaleWidth.isInfinite) scaleWidth = 1;
+        if (scaleHeight == 0 || scaleHeight.isInfinite) scaleHeight = 1;
+
+        // Choose the middle value between scaleWidth and scaleHeight
+        double scale = (scaleWidth + scaleHeight) / 2;
+
+        // Adjust the scale
+        layer.scale *= scale;
+
+        // Adjust the offset
+        layer.offset = Offset(
+          layer.offset.dx * scaleWidth,
+          layer.offset.dy * scaleHeight,
+        );
+      }
+    }
+  }
+
   void importStateHistory(ImportStateHistory import) {
     /// Recalculate position and size
     if (import.configs.recalculateSizeAndPosition) {
-      var imgSize = import.imgSize;
-      for (var el in import.stateHistory) {
-        for (var layer in el.layers) {
-          // Calculate scaling factors for width and height
-          double scaleWidth = _imageWidth / imgSize.width;
-          double scaleHeight = _imageHeight / imgSize.height;
-
-          if (scaleWidth == 0 || scaleWidth.isInfinite) scaleWidth = 1;
-          if (scaleHeight == 0 || scaleHeight.isInfinite) scaleHeight = 1;
-
-          // Choose the middle value between scaleWidth and scaleHeight
-          double scale = (scaleWidth + scaleHeight) / 2;
-
-          // Adjust the scale
-          layer.scale *= scale;
-
-          // Adjust the offset
-          layer.offset = Offset(
-            layer.offset.dx * scaleWidth,
-            layer.offset.dy * scaleHeight,
-          );
-        }
-      }
+      calculateSizeAndPositionImport(import, _imageWidth, _imageHeight);
     }
 
     if (import.configs.mergeMode == ImportEditorMergeMode.replace) {

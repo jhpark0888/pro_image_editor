@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pro_image_editor/models/editor_configs/state_history_importer_configs.dart';
-import 'package:pro_image_editor/models/editor_image.dart';
 import 'package:pro_image_editor/models/layer.dart';
 import 'package:pro_image_editor/modules/filter_editor/widgets/image_with_multiple_filters.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
@@ -389,8 +388,6 @@ class _MyHomePageState extends State<MyHomePage> {
                             emojiEditorConfigs: const EmojiEditorConfigs(
                               enabled: true,
                               initScale: 5.0,
-                              textStyle: TextStyle(
-                                  fontFamilyFallback: ['Apple Color Emoji']),
                               checkPlatformCompatibility: true,
                               /*  emojiSet: [
                                 CategoryEmoji(
@@ -419,7 +416,6 @@ class _MyHomePageState extends State<MyHomePage> {
                                     buildStateHistories:
                                         (setLayer, imgSize, img) {
                                       return ListView.separated(
-                                        padding: const EdgeInsets.all(16),
                                         itemCount: stateHistoryList.length,
                                         shrinkWrap: true,
                                         separatorBuilder: (context, index) =>
@@ -427,7 +423,18 @@ class _MyHomePageState extends State<MyHomePage> {
                                         itemBuilder: (context, index) {
                                           ImportStateHistory import =
                                               ImportStateHistory.fromJson(
-                                                  stateHistoryList[index]);
+                                            stateHistoryList[index],
+                                            configs: const ImportEditorConfigs(
+                                              recalculateSizeAndPosition: false,
+                                            ),
+                                          );
+
+                                          ProImageEditorState
+                                              .calculateSizeAndPositionImport(
+                                            import,
+                                            imgSize.width,
+                                            imgSize.height,
+                                          );
 
                                           List<Layer> layers =
                                               import.stateHistory.isNotEmpty
@@ -463,7 +470,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                             .layerHoverCursor,
                                                     padding: EdgeInsets.zero,
                                                     layerData: layerItem,
-                                                    textFontSize: 16,
+                                                    textFontSize: 24,
                                                     emojiTextStyle:
                                                         const EmojiEditorConfigs()
                                                             .textStyle,
