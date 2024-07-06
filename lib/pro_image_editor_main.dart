@@ -1830,6 +1830,13 @@ class ProImageEditorState extends State<ProImageEditor> {
       if (import.imgStateHistory.isNotEmpty) {
         _imgStateHistory = import.imgStateHistory;
       }
+
+      if (!widget.configs.exportEditorConfigs.exportCropRotate) {
+        for (var el in import.stateHistory) {
+          el.bytesRefIndex = _imgStateHistory.length - 1;
+        }
+      }
+
       _stateHistory = [
         EditorStateHistory(bytesRefIndex: 0, filters: [], layers: []),
         ...import.stateHistory
@@ -1837,6 +1844,9 @@ class ProImageEditorState extends State<ProImageEditor> {
     } else {
       for (var el in import.stateHistory) {
         if (import.configs.mergeMode == ImportEditorMergeMode.merge) {
+          if (!widget.configs.exportEditorConfigs.exportCropRotate) {
+            el.bytesRefIndex = _imgStateHistory.length - 1;
+          }
           el.layers.insertAll(0, _stateHistory.last.layers);
           el.filters.insertAll(0, _stateHistory.last.filters);
         }
